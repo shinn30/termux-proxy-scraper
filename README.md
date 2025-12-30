@@ -1,25 +1,28 @@
-# termux-proxy-scraper by shinn
+# Termux Proxy Scraper by shinn 🚀
 
-    # Termux Proxy Scraper By Shinn 🚀
-
-Fast and fresh free public proxy scraper for Termux with interactive menu.
+Fast fresh free public proxy scraper for Termux with beautiful green interactive menu. Scrapes HTTP, HTTPS, SOCKS4, SOCKS5 from top sources (updated every 5 minutes!).
 
 ### Features
-- main menu
-- [1] Start Scraping → Gets **super fresh** proxies (sources update every 5 minutes!)
-- [2] Download Results → Sub-menu to save files to your phone's **Download** folder (ALLRESULTS.txt, SOCKS4.txt, etc.)
-- Formatted ALLRESULTS.txt exactly as requested (RESULTS count + grouped sections with blank lines)
-- [3] Remove All Results → Cleans everything
-- No duplicates, fast parallel downloads
-- All file names in **CAPITAL LETTERS**
+- Super fresh proxies (Proxifly every 5 mins, ProxyScrape every second, TheSpeedX daily).
+- Interactive green menu: [1] Start Scraping, [2] Download Results (with sub-menu for ALLRESULTS.txt, SOCKS4.txt, etc.), [3] Remove All Results.
+- Downloads to phone's **Download** folder with CAPITAL file names.
+- Formatted ALLRESULTS.txt: "RESULTS [count]" + grouped sections (SOCKS4, SOCKS5, HTTP, HTTPS) with blank lines.
+- No duplicates, fast parallel fetches.
+- Note: Free public proxies only (not authenticated/HQ residential). Run often for fresh ones!
 
-**Important**: These are free public proxies (not HQ residential or authenticated). Many die quickly — run often for fresh ones!
+They have 2 options to install MANUAL INSTALL & QUICK INSTALL 
 
-### Installation & Run
-
-```bash
-
+MANUAL INSTALL
 pkg install curl
-nano proxy_scraper_menu.sh   # Paste the script code here
-chmod +x proxy_scraper_menu.sh
-./proxy_scraper_menu.sh
+
+git clone https://github.com/shinn30/termux-proxy-scraper.git
+
+chmod +x proxy_scraper
+./proxy_scraper
+
+### Quick Install & Run (One Command)
+In Termux, run this to clone, set up, and start:
+```bash
+pkg install git curl && git clone https://github.com/YourUsername/termux-proxy-scraper.git && cd termux-proxy-scraper && chmod +x proxy_scraper && ./proxy_scraper
+
+
