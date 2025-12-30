@@ -1,0 +1,173 @@
+#!/bin/bash
+
+# Ultimate Proxy Scraper with Interactive Main Menu (Termux)
+# Fast scraping from top sources (Dec 2025) - Separate HTTP, HTTPS, SOCKS4, SOCKS5
+# Copies files to phone's Download folder
+
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+
+DOWNLOAD_DIR="/sdcard/Download"
+INTERNAL_DIR="$HOME/proxy_scraper_results"
+
+mkdir -p "$INTERNAL_DIR"
+
+socks4_file="$INTERNAL_DIR/socks4.txt"
+socks5_file="$INTERNAL_DIR/socks5.txt"
+http_file="$INTERNAL_DIR/http.txt"
+https_file="$INTERNAL_DIR/https.txt"
+all_file="$INTERNAL_DIR/all.txt"
+
+scraped=0
+
+scrape_proxies() {
+    echo "Scraping fresh proxies... (This takes 10-30 seconds)"
+    
+    > "$socks4_file"
+    > "$socks5_file"
+    > "$http_file"
+    > "$https_file"
+    > "$all_file"
+
+    # Best sources with separate protocols (updated frequently)
+    curl -s --max-time 20 "https://cdn.jsdelivr.net/gh/proxifly/free-proxy-list@main/proxies/protocols/socks4/data.txt" >> "$socks4_file" &
+    curl -s --max-time 20 "https://cdn.jsdelivr.net/gh/proxifly/free-proxy-list@main/proxies/protocols/socks5/data.txt" >> "$socks5_file" &
+    curl -s --max-time 20 "https://cdn.jsdelivr.net/gh/proxifly/free-proxy-list@main/proxies/protocols/http/data.txt" >> "$http_file" &
+    # Proxifly has no separate HTTPS, often mixed in http or all
+    
+    curl -s --max-time 20 "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/socks4.txt" >> "$socks4_file" &
+    curl -s --max-time 20 "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/socks5.txt" >> "$socks5_file" &
+    curl -s --max-time 20 "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt" >> "$http_file" &
+
+    curl -s --max-time 20 "https://api.proxyscrape.com/v2/?request=getproxies&protocol=socks4" >> "$socks4_file" &
+    curl -s --max-time 20 "https://api.proxyscrape.com/v2/?request=getproxies&protocol=socks5" >> "$socks5_file" &
+    curl -s --max-time 20 "https://api.proxyscrape.com/v2/?request=getproxies&protocol=http&ssl=yes" >> "$https_file" &
+    curl -s --max-time 20 "https://api.proxyscrape.com/v2/?request=getproxies&protocol=http" >> "$http_file" &
+
+    wait
+
+    # Remove duplicates in each file
+    sort "$socks4_file" | uniq > temp && mv temp "$socks4_file"
+    sort "$socks5_file" | uniq > temp && mv temp "$socks5_file"
+    sort "$http_file" | uniq > temp && mv temp "$http_file"
+    sort "$https_file" | uniq > temp && mv temp "$https_file"
+
+    # Combine all for ALLRESULTS
+    cat "$socks4_file" "$socks5_file" "$http_file" "$https_file" | sort | uniq > "$all_file"
+
+    scraped=1
+    echo "Scraping complete!"
+}
+
+download_menu() {
+    while true; do
+        clear
+        echo -e "${GREEN}DOWNLOAD RESULTS${NC}"
+        echo
+        echo "[1] Download All (Total: $(wc -l < "$all_file" 2>/dev/null || echo 0))"
+        echo "[2] SOCKS4 (Total: $(wc -l < "$socks4_file" 2>/dev/null || echo 0) $( [ $(wc -l < "$socks4_file" 2>/dev/null || echo 0) -eq 0 ] && echo "Empty" ))"
+        echo "[3] SOCKS5 (Total: $(wc -l < "$socks5_file" 2>/dev/null || echo 0) $( [ $(wc -l < "$socks5_file" 2>/dev/null || echo 0) -eq 0 ] && echo "Empty" ))"
+        echo "[4] HTTP (Total: $(wc -l < "$http_file" 2>/dev/null || echo 0) $( [ $(wc -l < "$http_file" 2>/dev/null || echo 0) -eq 0 ] && echo "Empty" ))"
+        echo "[5] HTTPS (Total: $(wc -l < "$https_file" 2>/dev/null || echo 0) $( [ $(wc -l < "$https_file" 2>/dev/null || echo 0) -eq 0 ] && echo "Empty" ))"
+        echo "[6] Back to Main Menu"
+        echo
+        read -p "Choose option: " opt
+
+        case $opt in
+            1)
+                if [ $(wc -l < "$all_file") -gt 0 ]; then
+                    # Create formatted ALLRESULTS.txt
+                    formatted_all="$DOWNLOAD_DIR/ALLRESULTS.txt"
+                    echo "RESULTS $(wc -l < "$all_file")" > "$formatted_all"
+                    echo "" >> "$formatted_all"
+                    echo "SOCKS4" >> "$formatted_all"
+                    cat "$socks4_file" >> "$formatted_all"
+                    echo "" >> "$formatted_all"
+                    echo "" >> "$formatted_all"
+                    echo "SOCKS5" >> "$formatted_all"
+                    cat "$socks5_file" >> "$formatted_all"
+                    echo "" >> "$formatted_all"
+                    echo "" >> "$formatted_all"
+                    echo "HTTP" >> "$formatted_all"
+                    cat "$http_file" >> "$formatted_all"
+                    echo "" >> "$formatted_all"
+                    echo "" >> "$formatted_all"
+                    echo "HTTPS" >> "$formatted_all"
+                    cat "$https_file" >> "$formatted_all"
+                    echo "ALLRESULTS.txt saved to Download folder!"
+                else
+                    echo "No proxies yet! Scrape first."
+                fi
+                read -p "Press Enter to continue..."
+                ;;
+            2)
+                if [ $(wc -l < "$socks4_file") -gt 0 ]; then
+                    cp "$socks4_file" "$DOWNLOAD_DIR/SOCKS4.txt"
+                    echo "SOCKS4.txt saved to Download folder!"
+                else
+                    echo "SOCKS4 is Empty!"
+                fi
+                read -p "Press Enter to continue..."
+                ;;
+            3)
+                if [ $(wc -l < "$socks5_file") -gt 0 ]; then
+                    cp "$socks5_file" "$DOWNLOAD_DIR/SOCKS5.txt"
+                    echo "SOCKS5.txt saved to Download folder!"
+                else
+                    echo "SOCKS5 is Empty!"
+                fi
+                read -p "Press Enter to continue..."
+                ;;
+            4)
+                if [ $(wc -l < "$http_file") -gt 0 ]; then
+                    cp "$http_file" "$DOWNLOAD_DIR/HTTP.txt"
+                    echo "HTTP.txt saved to Download folder!"
+                else
+                    echo "HTTP is Empty!"
+                fi
+                read -p "Press Enter to continue..."
+                ;;
+            5)
+                if [ $(wc -l < "$https_file") -gt 0 ]; then
+                    cp "$https_file" "$DOWNLOAD_DIR/HTTPS.txt"
+                    echo "HTTPS.txt saved to Download folder!"
+                else
+                    echo "HTTPS is Empty!"
+                fi
+                read -p "Press Enter to continue..."
+                ;;
+            6) return ;;
+            *) echo "Invalid option" ; read -p "Press Enter..." ;;
+        esac
+    done
+}
+
+remove_results() {
+    rm -f "$socks4_file" "$socks5_file" "$http_file" "$https_file" "$all_file"
+    rm -f "$DOWNLOAD_DIR"/{ALLRESULTS,SOCKS4,SOCKS5,HTTP,HTTPS}.txt
+    scraped=0
+    echo "All results removed!"
+    read -p "Press Enter to continue..."
+}
+
+main_menu() {
+    while true; do
+        clear
+        echo -e "${GREEN}PROXY SCRAPER${NC}"
+        echo
+        echo "[1] Start Scraping"
+        echo "[2] Download Results"
+        echo "[3] Remove All Results"
+        echo
+        read -p "Choose option: " choice
+
+        case $choice in
+            1) scrape_proxies ; read -p "Press Enter to continue..." ;;
+            2) if [ "$scraped" -eq 1 ]; then download_menu ; else echo "Scrape first!" ; read -p "Press Enter..." ; fi ;;
+            3) remove_results ;;
+            *) echo "Invalid option" ; read -p "Press Enter..." ;;
+        esac
+    done
+}
+
+main_menu
